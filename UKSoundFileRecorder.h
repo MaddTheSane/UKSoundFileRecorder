@@ -82,14 +82,17 @@
 
 +(nonnull NSDictionary*)	defaultOutputFormat;
 
+/// NSArray of NSDictionaries. See below for the keys.
++(nonnull NSArray*)			availableInputDevices;
+
 /// Designated initializer. You can use -init and then do setOutputFilePath: or use -initWithOutputFilePath:.
 -(nonnull instancetype)				init NS_DESIGNATED_INITIALIZER;
 -(nonnull instancetype)				initWithOutputFilePath: (nonnull NSString*)ofp;
 
 // Setup:
-/// If you set no path, the delegate *must* implement -soundFileRecorder:receivedFrames:count:seconds:
+/// If you set no path, the delegate <i>must</i> implement \c -soundFileRecorder:receivedFrames:count:seconds:
 @property (nonatomic, copy, nonnull) NSString *outputFilePath;
-/// Calls [self setOutputFilePath: [sender stringValue]].
+/// Calls <code>[self setOutputFilePath: [sender stringValue]]</code>.
 -(IBAction)			takeOutputFilePathFrom: (nonnull id)sender;
 
 /// Keys for this dictionary can be found in UKAudioStreamBasicDescription.h and below.
@@ -99,15 +102,20 @@
 @property (nonatomic, weak, nullable) id<UKSoundFileRecorderDelegate> delegate;
 
 // Recording:
+///Start recording sound, like, right now.
 -(IBAction)				start: (nullable id)sender;
+
+/// Is YES if we are currently recording, NO otherwise.
 @property (nonatomic, getter=isRecording, readonly) BOOL recording;
+
+/// Stop recording sound and flush the file to disk.
 -(IBAction)				stop: (nullable id)sender;
 
-// Pass NIL for the system default input device as set in System Preferences.app
+/// Pass \c nil for the system default input device as set in System Preferences.app
 @property (nonatomic, strong, null_resettable) NSString *inputDeviceUID;
 
 // You probably don't need this:
-/// Called as needed by start:, if nobody called it before that.
+/// Called as needed by <code>start:</code>, if nobody called it before that.
 -(void)				prepare;
 
 @end
