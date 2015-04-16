@@ -80,6 +80,8 @@
 	BOOL						delegateWantsRawFrames;
 }
 
+/// Returns a dictionary containing our default output format for the sound
+/// data. This is what you get if you don't call <code>setOutputFormat:</code>.
 +(nonnull NSDictionary*)	defaultOutputFormat;
 
 /// NSArray of NSDictionaries. See below for the keys.
@@ -95,8 +97,12 @@
 /// Calls <code>[self setOutputFilePath: [sender stringValue]]</code>.
 -(IBAction)			takeOutputFilePathFrom: (nonnull id)sender;
 
-/// Keys for this dictionary can be found in UKAudioStreamBasicDescription.h and below.
+/// The output format.
+/// @discussion Keys for this dictionary can be found in UKAudioStreamBasicDescription.h and below.
 @property (nonatomic, copy, nonnull) NSDictionary *outputFormat;
+
+/// The actual output format.
+/// @discussion Keys for this dictionary can be found in UKAudioStreamBasicDescription.h and below.
 @property (nonatomic, copy, readonly, nonnull) NSDictionary*	actualOutputFormat;
 
 @property (nonatomic, weak, nullable) id<UKSoundFileRecorderDelegate> delegate;

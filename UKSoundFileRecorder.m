@@ -48,7 +48,7 @@ static OSStatus AudioInputProc( void* inRefCon, AudioUnitRenderActionFlags* ioAc
 static OSStatus	UKSoundFileRecorderAudioDeviceListChanged( AudioHardwarePropertyID inPropertyID, void* inClientData );
 
 
-static int32_t	UKInt32FromOSStatus( OSStatus inErr )
+static inline int32_t	UKInt32FromOSStatus( OSStatus inErr )
 {
 	return (int32_t)inErr;
 }
@@ -66,7 +66,7 @@ static int32_t	UKInt32FromOSStatus( OSStatus inErr )
 -(AudioBufferList*)	allocateAudioBufferListWithNumChannels: (UInt32)numChannels size: (UInt32)size NS_RETURNS_INNER_POINTER;
 -(void)				destroyAudioBufferList: (AudioBufferList*)list;
 @property (nonatomic, getter=isRecording, readwrite) BOOL recording;
--(void)				notifyDelegateOfTimeChange: (NSNumber*)currentAmps;
+-(void)				notifyDelegateOfTimeChange: (float)currentAmps;
 
 @end
 
@@ -99,7 +99,7 @@ static int32_t	UKInt32FromOSStatus( OSStatus inErr )
 
 +(NSArray*)		availableInputDevices
 {
-	NSMutableArray	*	names = [NSMutableArray array];
+	NSMutableArray	*	names = [[NSMutableArray alloc] init];
 	
 	AudioObjectPropertyAddress propertyAddress = {
 													kAudioHardwarePropertyDevices,
@@ -157,6 +157,9 @@ static int32_t	UKInt32FromOSStatus( OSStatus inErr )
 				continue;
 		}
 		
+		//Why is this autoreleased?
+		//[(id)deviceName autorelease];
+
 		// Query device manufacturer
 		CFStringRef deviceManufacturer = NULL;
 		dataSize = sizeof(deviceManufacturer);
@@ -186,7 +189,7 @@ static int32_t	UKInt32FromOSStatus( OSStatus inErr )
 		free(bufferList), bufferList = NULL;
 		
 		// Add a dictionary for this device to the array of input devices
-		NSDictionary	*	deviceDictionary = [NSDictionary dictionaryWithObjectsAndKeys: (__bridge NSString*)deviceUID, UKSoundFileRecorderDeviceUID, CFBridgingRelease(deviceName), UKSoundFileRecorderDeviceName, (__bridge NSString*)deviceManufacturer, UKSoundFileRecorderDeviceManufacturer, nil];
+		NSDictionary * deviceDictionary = @{UKSoundFileRecorderDeviceUID: (__bridge NSString*)deviceUID, UKSoundFileRecorderDeviceName: (__bridge NSString*)deviceName, UKSoundFileRecorderDeviceManufacturer: (__bridge NSString*)deviceManufacturer};
 		[names addObject: deviceDictionary];
 	}
 	
@@ -337,7 +340,9 @@ OSStatus AudioInputProc( void* inRefCon, AudioUnitRenderActionFlags* ioActionFla
 	}
 	
 	if( afr->isRecording && (afr->delegateWantsTimeChanges || afr->delegateWantsLevels) )	// Don't waste time syncing to other threads if nobody is listening:
-		[afr performSelectorOnMainThread: @selector(notifyDelegateOfTimeChange:) withObject: [NSNumber numberWithFloat: currentLevel] waitUntilDone: NO];
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[afr notifyDelegateOfTimeChange:currentLevel];
+		});
 	
 cleanUp:
 	return err;
@@ -745,7 +750,7 @@ cleanUp:
 						&param, &rate);
 		if (err == noErr)
 		{
-			NSNumber*	num = [outputFormat objectForKey: UKAudioStreamSampleRate];
+			NSNumber*	num = outputFormat[UKAudioStreamSampleRate];
 			if( num )
 			{
 				rate = [num doubleValue];
@@ -912,14 +917,14 @@ cleanUp:
 }
 
 // Used by our AudioInputProc to easily call this delegate method from another thread:
--(void)	notifyDelegateOfTimeChange: (NSNumber*)currentAmps
+-(void)	notifyDelegateOfTimeChange: (float)currentAmps
 {
 	if( isRecording )	// In case we queued one up but were already finished by the time it got executed.
 	{
 		if( delegateWantsTimeChanges )
 			[delegate soundFileRecorder: self reachedDuration: currSeconds];
 		if( delegateWantsLevels )
-			[delegate soundFileRecorder: self hasAmplitude: [currentAmps floatValue]];
+			[delegate soundFileRecorder: self hasAmplitude: currentAmps];
 	}
 }
 
