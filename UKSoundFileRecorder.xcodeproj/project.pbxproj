@@ -13,13 +13,13 @@
 		3D59F60D0C5B57EF00AAEBE2 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D59F60C0C5B57EF00AAEBE2 /* AudioToolbox.framework */; };
 		3D59F6160C5B580B00AAEBE2 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D59F5FC0C5B57A500AAEBE2 /* CoreAudio.framework */; };
 		3D59F61A0C5B581800AAEBE2 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D59F6070C5B57D400AAEBE2 /* AudioUnit.framework */; };
+		5524E0F61AE0791600945DD5 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 5524E0F41AE0791600945DD5 /* MainMenu.xib */; };
 		55D281CC1AE05F8C008EC63A /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55D281CB1AE05F8C008EC63A /* AppDelegate.swift */; };
 		55D281CE1AE05F8C008EC63A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 55D281CD1AE05F8C008EC63A /* Images.xcassets */; };
 		55D281D11AE05F8C008EC63A /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 55D281CF1AE05F8C008EC63A /* MainMenu.xib */; };
 		55D281DD1AE05F8C008EC63A /* UKSwiftSoundFileRecorderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55D281DC1AE05F8C008EC63A /* UKSwiftSoundFileRecorderTests.swift */; };
 		55D281E41AE05F99008EC63A /* UKSoundFileRecorder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3D0CF7C60C48D46C00C9667A /* UKSoundFileRecorder.m */; };
 		55D281E51AE05FA0008EC63A /* UKAudioStreamBasicDescription.m in Sources */ = {isa = PBXBuildFile; fileRef = 3D0CF8C00C48ED2700C9667A /* UKAudioStreamBasicDescription.m */; };
-		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
@@ -40,7 +40,6 @@
 		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		13E42FB307B3F0F600E4EEF1 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		29B97319FDCFA39411CA2CEA /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/MainMenu.nib; sourceTree = "<group>"; };
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		32CA4F630368D1EE00C91783 /* UKSoundRecorder_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UKSoundRecorder_Prefix.pch; sourceTree = "<group>"; };
@@ -53,6 +52,7 @@
 		3D59F5FC0C5B57A500AAEBE2 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = /System/Library/Frameworks/CoreAudio.framework; sourceTree = "<absolute>"; };
 		3D59F6070C5B57D400AAEBE2 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = /System/Library/Frameworks/AudioUnit.framework; sourceTree = "<absolute>"; };
 		3D59F60C0C5B57EF00AAEBE2 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = /System/Library/Frameworks/AudioToolbox.framework; sourceTree = "<absolute>"; };
+		5524E0F51AE0791600945DD5 /* English */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = English; path = English.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		55D281C71AE05F8C008EC63A /* UKSwiftSoundFileRecorder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UKSwiftSoundFileRecorder.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		55D281CA1AE05F8C008EC63A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		55D281CB1AE05F8C008EC63A /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -167,7 +167,7 @@
 			children = (
 				8D1107310486CEB800E47090 /* Info.plist */,
 				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
-				29B97318FDCFA39411CA2CEA /* MainMenu.nib */,
+				5524E0F41AE0791600945DD5 /* MainMenu.xib */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -297,6 +297,7 @@
 			hasScannedForEncodings = 1;
 			knownRegions = (
 				en,
+				English,
 			);
 			mainGroup = 29B97314FDCFA39411CA2CEA /* UKSoundRecorder */;
 			projectDirPath = "";
@@ -330,8 +331,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */,
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
+				5524E0F61AE0791600945DD5 /* MainMenu.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -386,12 +387,12 @@
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
-		29B97318FDCFA39411CA2CEA /* MainMenu.nib */ = {
+		5524E0F41AE0791600945DD5 /* MainMenu.xib */ = {
 			isa = PBXVariantGroup;
 			children = (
-				29B97319FDCFA39411CA2CEA /* English */,
+				5524E0F51AE0791600945DD5 /* English */,
 			);
-			name = MainMenu.nib;
+			name = MainMenu.xib;
 			sourceTree = "<group>";
 		};
 		55D281CF1AE05F8C008EC63A /* MainMenu.xib */ = {
