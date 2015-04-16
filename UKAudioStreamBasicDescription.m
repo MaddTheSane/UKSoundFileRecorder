@@ -32,35 +32,35 @@ void			UKAudioStreamDescriptionFromDictionary( NSDictionary* dict, AudioStreamBa
 {
 	memset( outDesc, 0, sizeof(AudioStreamBasicDescription) );	// Anything not there gets set to 0.
 	
-	NSNumber*	num = [dict objectForKey: UKAudioStreamSampleRate];
+	NSNumber*	num = dict[UKAudioStreamSampleRate];
 	if( num )
 		outDesc->mSampleRate = [num doubleValue];
 	
-	NSString* str = [dict objectForKey: UKAudioStreamFormat];
+	NSString* str = dict[UKAudioStreamFormat];
 	if( str )
 		outDesc->mFormatID = UKAudioStreamFormatIDFromString(str);
 	
-	num = [dict objectForKey: UKAudioStreamFormatFlags];
+	num = dict[UKAudioStreamFormatFlags];
 	if( num )
 		outDesc->mFormatFlags = [num unsignedIntValue];
 	
-	num = [dict objectForKey: UKAudioStreamBytesPerPacket];
+	num = dict[UKAudioStreamBytesPerPacket];
 	if( num )
 		outDesc->mBytesPerPacket = [num unsignedIntValue];
 	
-	num = [dict objectForKey: UKAudioStreamFramesPerPacket];
+	num = dict[UKAudioStreamFramesPerPacket];
 	if( num )
 		outDesc->mFramesPerPacket = [num unsignedIntValue];
 	
-	num = [dict objectForKey: UKAudioStreamBytesPerFrame];
+	num = dict[UKAudioStreamBytesPerFrame];
 	if( num )
 		outDesc->mBytesPerFrame = [num unsignedIntValue];
 	
-	num = [dict objectForKey: UKAudioStreamChannelsPerFrame];
+	num = dict[UKAudioStreamChannelsPerFrame];
 	if( num )
 		outDesc->mChannelsPerFrame = [num unsignedIntValue];
 	
-	num = [dict objectForKey: UKAudioStreamBitsPerChannel];
+	num = dict[UKAudioStreamBitsPerChannel];
 	if( num )
 		outDesc->mBitsPerChannel = [num unsignedIntValue];
 }
@@ -68,23 +68,24 @@ void			UKAudioStreamDescriptionFromDictionary( NSDictionary* dict, AudioStreamBa
 
 NSDictionary*	UKDictionaryFromAudioStreamDescription( const AudioStreamBasicDescription* desc )
 {
-	return [NSDictionary dictionaryWithObjectsAndKeys:
-									[NSNumber numberWithDouble: desc->mSampleRate], UKAudioStreamSampleRate,
-									UKStringFromAudioStreamFormatID( desc->mFormatID ), UKAudioStreamFormat,
-									[NSNumber numberWithUnsignedInt: desc->mFormatFlags], UKAudioStreamFormatFlags,
-									[NSNumber numberWithUnsignedInt: desc->mBytesPerPacket], UKAudioStreamBytesPerPacket,
-									[NSNumber numberWithUnsignedInt: desc->mFramesPerPacket], UKAudioStreamFramesPerPacket,
-									[NSNumber numberWithUnsignedInt: desc->mBytesPerFrame], UKAudioStreamBytesPerFrame,
-									[NSNumber numberWithUnsignedInt: desc->mChannelsPerFrame], UKAudioStreamChannelsPerFrame,
-									[NSNumber numberWithUnsignedInt: desc->mBitsPerChannel], UKAudioStreamBitsPerChannel,
-									nil
-								];
+	return @{UKAudioStreamSampleRate: @(desc->mSampleRate),
+			 UKAudioStreamFormat: UKStringFromAudioStreamFormatID( desc->mFormatID ),
+			 UKAudioStreamFormatFlags: @(desc->mFormatFlags),
+			 UKAudioStreamBytesPerPacket: @(desc->mBytesPerPacket),
+			 UKAudioStreamFramesPerPacket: @(desc->mFramesPerPacket),
+			 UKAudioStreamBytesPerFrame: @(desc->mBytesPerFrame),
+			 UKAudioStreamChannelsPerFrame: @(desc->mChannelsPerFrame),
+			 UKAudioStreamBitsPerChannel: @(desc->mBitsPerChannel)};
 }
 
 NSString*		UKStringFromAudioStreamFormatID( UInt32 streamFmt )
 {
+	NSString *retVal = CFBridgingRelease(UTCreateStringForOSType(streamFmt));
+	if (retVal) {
+		return retVal;
+	}
 	streamFmt = EndianU32_BtoN(streamFmt);
-	return [[[NSString alloc] initWithBytes: &streamFmt length: 4 encoding: NSMacOSRomanStringEncoding] autorelease];
+	return [[NSString alloc] initWithBytes: &streamFmt length: 4 encoding: NSMacOSRomanStringEncoding];
 }
 
 

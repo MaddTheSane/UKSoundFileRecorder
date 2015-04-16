@@ -10,12 +10,11 @@
 #import "UKSoundFileRecorder.h"
 
 
-@interface AppDelegate : NSObject
-{
-	IBOutlet UKSoundFileRecorder*		recorder;
-	IBOutlet NSTextField*				pathField;
-	IBOutlet NSTextField*				statusField;
-	IBOutlet NSTextField*				levelField;
-}
+@interface AppDelegate : NSObject <UKSoundFileRecorderDelegate, NSApplicationDelegate>
+@property (weak) IBOutlet UKSoundFileRecorder*	recorder;
+@property (weak) IBOutlet NSTextField*			pathField;
+@property (weak) IBOutlet NSTextField*			statusField;
+@property (weak) IBOutlet NSTextField*			levelField;
+
 
 @end

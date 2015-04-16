@@ -58,20 +58,22 @@ static int32_t	UKInt32FromOSStatus( OSStatus inErr )
 //	Private method prototypes:
 // -----------------------------------------------------------------------------
 
-@interface UKSoundFileRecorder (UKSoundFileRecorderPrivateMethods)
+@interface UKSoundFileRecorder ()
 
 -(void)				cleanUp;
 -(NSString*)		setupAudioFile;		// Returns error string, NIL on success.
 -(NSString*)		configureAU;		// Returns error string, NIL on success.
--(AudioBufferList*)	allocateAudioBufferListWithNumChannels: (UInt32)numChannels size: (UInt32)size;
+-(AudioBufferList*)	allocateAudioBufferListWithNumChannels: (UInt32)numChannels size: (UInt32)size NS_RETURNS_INNER_POINTER;
 -(void)				destroyAudioBufferList: (AudioBufferList*)list;
+@property (nonatomic, getter=isRecording, readwrite) BOOL recording;
 -(void)				notifyDelegateOfTimeChange: (NSNumber*)currentAmps;
 
 @end
 
-
-
 @implementation UKSoundFileRecorder
+@synthesize delegate;
+@synthesize outputFilePath;
+@synthesize recording = isRecording;
 
 // -----------------------------------------------------------------------------
 //	defaultOutputFormat:
@@ -84,13 +86,11 @@ static int32_t	UKInt32FromOSStatus( OSStatus inErr )
 	static NSDictionary*	sDict = nil;
 	if( !sDict )
 	{
-		sDict = [[NSDictionary alloc] initWithObjectsAndKeys:
-												[NSNumber numberWithDouble: 44100.0], UKAudioStreamSampleRate,
-												UKAudioStreamFormatMPEG4AAC, UKAudioStreamFormat,
-												[NSNumber numberWithUnsignedInt: 1024], UKAudioStreamFramesPerPacket,
-												[NSNumber numberWithUnsignedInt: 2], UKAudioStreamChannelsPerFrame,
-												UKAudioOutputFileTypeM4A, UKAudioOutputFileType,
-												nil];
+		sDict = @{UKAudioStreamSampleRate: @44100.0,
+				  UKAudioStreamFormat: UKAudioStreamFormatMPEG4AAC,
+				  UKAudioStreamFramesPerPacket: @1024U,
+				  UKAudioStreamChannelsPerFrame: @2U,
+				  UKAudioOutputFileType: UKAudioOutputFileTypeM4A};
 	}
 	
 	return sDict;
@@ -157,8 +157,6 @@ static int32_t	UKInt32FromOSStatus( OSStatus inErr )
 				continue;
 		}
 		
-		[(id)deviceName autorelease];
-
 		// Query device manufacturer
 		CFStringRef deviceManufacturer = NULL;
 		dataSize = sizeof(deviceManufacturer);
@@ -188,7 +186,7 @@ static int32_t	UKInt32FromOSStatus( OSStatus inErr )
 		free(bufferList), bufferList = NULL;
 		
 		// Add a dictionary for this device to the array of input devices
-		NSDictionary	*	deviceDictionary = [NSDictionary dictionaryWithObjectsAndKeys: (NSString*)deviceUID, UKSoundFileRecorderDeviceUID, (NSString*)deviceName, UKSoundFileRecorderDeviceName, (NSString*)deviceManufacturer, UKSoundFileRecorderDeviceManufacturer, nil];
+		NSDictionary	*	deviceDictionary = [NSDictionary dictionaryWithObjectsAndKeys: (__bridge NSString*)deviceUID, UKSoundFileRecorderDeviceUID, CFBridgingRelease(deviceName), UKSoundFileRecorderDeviceName, (__bridge NSString*)deviceManufacturer, UKSoundFileRecorderDeviceManufacturer, nil];
 		[names addObject: deviceDictionary];
 	}
 	
@@ -219,12 +217,13 @@ static OSStatus	UKSoundFileRecorderAudioDeviceListChanged( AudioHardwareProperty
 //	* DESIGNATED INITIALIZER:
 // -----------------------------------------------------------------------------
 
--(id)	init
+-(instancetype)	init
 {
 	self = [super init];
 	if( self )
 	{
 		[self setOutputFormat: [[self class] defaultOutputFormat]];	// Apply a sensible default.
+		outputFilePath = @"";
 	}
 	
 	return self;
@@ -234,7 +233,7 @@ static OSStatus	UKSoundFileRecorderAudioDeviceListChanged( AudioHardwareProperty
 //	* CONVENIENCE INITIALIZER:
 // -----------------------------------------------------------------------------
 
--(id)	initWithOutputFilePath: (NSString*)ofp
+-(instancetype)	initWithOutputFilePath: (NSString*)ofp
 {
 	self = [self init];	// SELF, not SUPER! We want the rest of the init to happen regularly.
 	if( self )
@@ -254,24 +253,12 @@ static OSStatus	UKSoundFileRecorderAudioDeviceListChanged( AudioHardwareProperty
 {
 	[NSRunLoop cancelPreviousPerformRequestsWithTarget: self];
 	
-	NS_DURING
+	@try {
 		[self cleanUp];	// cleanUp calls stop, which may throw.
-	NS_HANDLER
+	} @catch (NSException *localException) {
 		NSLog(@"[UKSoundFileRecorder dealloc]: Ignoring exception during clean-up. %@ : %@",[localException name],[localException reason]);
-	NS_ENDHANDLER
+	}
 	[self destroyAudioBufferList: audioBuffer];
-	
-	[outputFilePath release];
-	outputFilePath = nil;
-	
-	[actualOutputFormatDict release];
-	actualOutputFormatDict = nil;
-	[outputFormat release];
-	outputFormat = nil;
-	[inputDeviceUID release];
-	inputDeviceUID = nil;
-	
-	[super dealloc];
 }
 
 
@@ -288,12 +275,6 @@ static OSStatus	UKSoundFileRecorderAudioDeviceListChanged( AudioHardwareProperty
 }
 
 
--(id<UKSoundFileRecorderDelegate>)	delegate
-{
-	return delegate;
-}
-
-
 // -----------------------------------------------------------------------------
 //	AudioInputProc:
 //		Callback function that is called by the audio unit on its high-priority
@@ -301,10 +282,10 @@ static OSStatus	UKSoundFileRecorderAudioDeviceListChanged( AudioHardwareProperty
 //		to the file. Try not to do too much here.
 // -----------------------------------------------------------------------------
 
-static OSStatus AudioInputProc( void* inRefCon, AudioUnitRenderActionFlags* ioActionFlags, const AudioTimeStamp* inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList* ioData)
+OSStatus AudioInputProc( void* inRefCon, AudioUnitRenderActionFlags* ioActionFlags, const AudioTimeStamp* inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList* ioData)
 {
-	NSAutoreleasePool	*	pool = [[NSAutoreleasePool alloc] init];
-	UKSoundFileRecorder *	afr = (UKSoundFileRecorder*)inRefCon;
+	@autoreleasepool {
+	UKSoundFileRecorder *	afr = (__bridge UKSoundFileRecorder*)inRefCon;
 	OSStatus				err = noErr;
 
 	// Render into audio buffer
@@ -359,9 +340,8 @@ static OSStatus AudioInputProc( void* inRefCon, AudioUnitRenderActionFlags* ioAc
 		[afr performSelectorOnMainThread: @selector(notifyDelegateOfTimeChange:) withObject: [NSNumber numberWithFloat: currentLevel] waitUntilDone: NO];
 	
 cleanUp:
-	[pool release];
-	
 	return err;
+	}
 }
 
 
@@ -378,7 +358,6 @@ cleanUp:
 			[self cleanUp];	// Make sure we recreate our objects for the new format.
 		
 		[self willChangeValueForKey: @"outputFilePath"];
-		[outputFilePath release];
 		outputFilePath = [inOutputFilePath copy];
 		
 		if( audioUnit && inOutputFilePath )
@@ -403,12 +382,6 @@ cleanUp:
 }
 
 
--(NSString*)	outputFilePath
-{
-	return outputFilePath;
-}
-
-
 // Handy method for hooking up this object to a text field:
 -(IBAction)		takeOutputFilePathFrom: (id)sender
 {
@@ -428,9 +401,7 @@ cleanUp:
 		if( isRecording )
 			[NSException raise: @"UKSoundFileRecorderBusyRecording" format: @"Can't change output format when recording has already started."];
 		
-		NSDictionary *oldFormat = outputFormat;
 		outputFormat = [inASBD copy];
-		[oldFormat release];
 		
 		[self cleanUp];	// Make sure we recreate our objects for the new format.
 	}
@@ -447,8 +418,7 @@ cleanUp:
 {
 	if( !actualOutputFormatDict )
 	{
-		[actualOutputFormatDict release];
-		actualOutputFormatDict = [UKDictionaryFromAudioStreamDescription( &actualOutputFormat ) retain];
+		actualOutputFormatDict = UKDictionaryFromAudioStreamDescription( &actualOutputFormat );
 	}
 	return actualOutputFormatDict;
 }
@@ -480,18 +450,12 @@ cleanUp:
 //		Returns YES if we are currently recording, NO otherwise.
 // -----------------------------------------------------------------------------
 
--(BOOL)	isRecording
-{
-	return isRecording;
-}
-
-
 // -----------------------------------------------------------------------------
 //	start:
 //		Start recording sound, like, right now.
 // -----------------------------------------------------------------------------
 
--(void)	start: (id)sender
+-(IBAction)	start: (id)sender
 {
 	if( isRecording )
 		return;
@@ -504,9 +468,7 @@ cleanUp:
 	OSStatus err = AudioOutputUnitStart( audioUnit );
 	if( err == noErr )
 	{
-		[self willChangeValueForKey: @"isRecording"];
-		isRecording = YES;
-		[self didChangeValueForKey: @"isRecording"];
+		self.recording = YES;
 		if( delegate && [delegate respondsToSelector: @selector(soundFileRecorderWasStarted:)] )
 			[delegate soundFileRecorderWasStarted: self];
 	}
@@ -520,7 +482,7 @@ cleanUp:
 //		Stop recording sound and flush the file to disk.
 // -----------------------------------------------------------------------------
 
--(void)	stop: (id)sender
+-(IBAction)	stop: (id)sender
 {
 	if( isRecording )
 	{
@@ -532,11 +494,12 @@ cleanUp:
 				[NSException raise: @"UKSoundFileRecorderCantStop" format: @"Could not stop recording (ID=%d)", err];
 		}
 		
-		[self willChangeValueForKey: @"isRecording"];
-		isRecording = NO;
-		[self didChangeValueForKey: @"isRecording"];
-		if( delegate && [delegate respondsToSelector: @selector(soundFileRecorderWasStopped:)] )
-			[delegate performSelectorOnMainThread: @selector(soundFileRecorderWasStopped:) withObject: self waitUntilDone: NO];
+		self.recording = NO;
+		if( delegate && [delegate respondsToSelector: @selector(soundFileRecorderWasStopped:)] ) {
+			dispatch_async(dispatch_get_main_queue(), ^{
+				[delegate soundFileRecorderWasStopped: self];
+			});
+		}
 		
 		[self cleanUp];	// Make sure file gets flushed to disk.
 		[[NSWorkspace sharedWorkspace] noteFileSystemChanged: outputFilePath];	// Make sure Finder updates file size.
@@ -565,8 +528,7 @@ cleanUp:
 	
 	if( err == noErr && inDeviceUID != inputDeviceUID )
 	{
-		[inputDeviceUID release];
-		inputDeviceUID = [inDeviceUID retain];
+		inputDeviceUID = inDeviceUID;
 	}
 }
 
@@ -575,11 +537,6 @@ cleanUp:
 {
 	return inputDeviceUID;
 }
-
-@end
-
-
-@implementation UKSoundFileRecorder (UKSoundFileRecorderPrivateMethods)
 
 
 // -----------------------------------------------------------------------------
@@ -604,7 +561,7 @@ cleanUp:
 	
 	if( audioUnit )
 	{
-		CloseComponent( audioUnit );
+		AudioComponentInstanceDispose( audioUnit );
 		audioUnit = NULL;
 	}
 }
@@ -622,27 +579,11 @@ cleanUp:
 {
 	OSStatus					err = noErr;
 	AudioConverterRef			conv = NULL;
-	NSString*					outputDirectory = [outputFilePath stringByDeletingLastPathComponent];
-	NSString*					outputFileName = [outputFilePath lastPathComponent];
-	FSRef						parentDirectory;
 	AudioStreamBasicDescription	desiredOutputFormat;
-	NSString*					fileFormatStr = [outputFormat objectForKey: UKAudioOutputFileType];
+	NSString*					fileFormatStr = outputFormat[UKAudioOutputFileType];
 	AudioFileTypeID				fileFormat = fileFormatStr ? UKAudioStreamFormatIDFromString( fileFormatStr ) : kAudioFileM4AType;
 	
-	if( [[NSFileManager defaultManager] fileExistsAtPath: outputFilePath] )
-	{
-		NSError*	err = nil;
-		if( ![[NSFileManager defaultManager] removeItemAtPath: outputFilePath error: &err] )
-			NSLog(@"Couldn't delete %@: %@", outputFilePath, err);
-	}
-	
 	UKAudioStreamDescriptionFromDictionary( outputFormat, &desiredOutputFormat );
-	
-	if( outputFilePath )
-	{
-		if( ![outputDirectory getFSRef: &parentDirectory] )
-			return [NSString stringWithFormat: @"Could not get reference to directory \"%@\"",outputDirectory];
-	}
 	
 	if( outputAudioFile != NULL )	// Have an audio file already? Get rid of that. IMPORTANT for setOutputFilePath:, which relies on this not calling cleanUp and stopping the player when it's just being used to start a new segment.
 		[self cleanUp];
@@ -650,7 +591,7 @@ cleanUp:
 	if( outputFilePath )
 	{
 		// Create new MP4 file (kAudioFileM4AType)
-		err = ExtAudioFileCreateNew( &parentDirectory, (CFStringRef)outputFileName, fileFormat, &desiredOutputFormat, NULL, &outputAudioFile );
+		err = ExtAudioFileCreateWithURL((__bridge CFURLRef)([NSURL fileURLWithPath:outputFilePath]), fileFormat, &desiredOutputFormat, NULL, kAudioFileFlags_EraseFile, &outputAudioFile);
 		if( err != noErr )
 		{
 			char formatID[5];
@@ -707,20 +648,19 @@ cleanUp:
 //		Returns NIL on success, an error string on failure.
 // -----------------------------------------------------------------------------
 
--(NSString*)	configureAU
+-(NSString*)configureAU
 {
-	Component					component = NULL;
-	ComponentDescription		description;
+	AudioComponent				component = NULL;
+	AudioComponentDescription	description;
 	OSStatus					err = noErr;
 	UInt32						param;
 	AURenderCallbackStruct		callback;
 	
 	if( audioUnit )
 	{
-		CloseComponent( audioUnit );
+		AudioComponentInstanceDispose( audioUnit );
 		audioUnit = NULL;
 	}
-	canDoMetering = NO;
 	
 	// Open the AudioOutputUnit
 	// There are several different types of Audio Units.
@@ -731,9 +671,9 @@ cleanUp:
 	description.componentManufacturer = kAudioUnitManufacturer_Apple;
 	description.componentFlags = 0;
 	description.componentFlagsMask = 0;
-	if(( component = FindNextComponent( NULL, &description ) ))
+	if( (component = AudioComponentFindNext( NULL, &description )) )
 	{
-		err = OpenAComponent( component, &audioUnit );
+		err = AudioComponentInstanceNew( component, &audioUnit );
 		if( err != noErr )
 		{
 			audioUnit = NULL;
@@ -765,9 +705,9 @@ cleanUp:
 	// Select the default input device
 	if( inputDeviceID == kAudioObjectUnknown )	// Couldn't find it? Fall back to default input:
 	{
-		[inputDeviceUID release];
 		inputDeviceUID = nil;
 		param = sizeof(AudioDeviceID);
+		//Replace with AudioObjectGetPropertyData
 		err = AudioHardwareGetProperty( kAudioHardwarePropertyDefaultInputDevice, &param, &inputDeviceID );
 	}
 	else
@@ -792,7 +732,7 @@ cleanUp:
 	// Setup render callback
 	// This will be called when the AUHAL has input data
 	callback.inputProc = AudioInputProc;
-	callback.inputProcRefCon = self;
+	callback.inputProcRefCon = (__bridge void *)(self);
 	err = AudioUnitSetProperty( audioUnit, kAudioOutputUnitProperty_SetInputCallback, kAudioUnitScope_Global, 0, &callback, sizeof(AURenderCallbackStruct) );
 	if(err != noErr)
 	{
@@ -879,8 +819,7 @@ cleanUp:
 		[self cleanUp];
 		return [NSString stringWithFormat: @"Could not retrieve the stream format of the output device (ID=%d)", err];
 	}
-	[actualOutputFormatDict release];	// Make sure next guy who asks for it gets a new lazily-allocated conversion.
-	actualOutputFormatDict = nil;
+	actualOutputFormatDict = nil;	// Make sure next guy who asks for it gets a new lazily-allocated conversion.
 	
 	if( deviceFormat.mChannelsPerFrame == 1 && audioChannels == 2 )
 	{
@@ -892,7 +831,7 @@ cleanUp:
 			return [NSString stringWithFormat: @"Error %d setting channel map.", err ];
 		}
 	}
-
+	
 	// Get the number of frames in the IO buffer(s)
 	param = sizeof(UInt32);
 	err = AudioUnitGetProperty( audioUnit, kAudioDevicePropertyBufferFrameSize, kAudioUnitScope_Global, 0, &audioSamples, &param );

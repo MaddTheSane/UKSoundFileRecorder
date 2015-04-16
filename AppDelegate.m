@@ -10,21 +10,26 @@
 
 
 @implementation AppDelegate
+@synthesize pathField;
+@synthesize recorder;
+@synthesize statusField;
+@synthesize levelField;
 
 -(void)	awakeFromNib
 {
-	[recorder takeOutputFilePathFrom: pathField];
+	NSString *recPath = [[NSHomeDirectory() stringByAppendingPathComponent:@"Documents"] stringByAppendingPathComponent: @"CocoaRecording.m4a"];
+	recorder.outputFilePath = recPath;
 	[recorder setDelegate: self];
 }
 
 -(void)	soundFileRecorderWasStarted: (UKSoundFileRecorder*)sender
 {
-	[statusField setStringValue: @"Recording..."];
+	[statusField setStringValue: @"Recording…"];
 }
 
 -(void)	soundFileRecorder: (UKSoundFileRecorder*)sender reachedDuration: (NSTimeInterval)timeInSeconds
 {
-	[statusField setStringValue: [NSString stringWithFormat: @"%ld Seconds...", lroundf(timeInSeconds)]];
+	[statusField setStringValue: [NSString stringWithFormat: @"%ld Seconds…", lroundf(timeInSeconds)]];
 }
 
 -(void)	soundFileRecorder: (UKSoundFileRecorder*)sender hasAmplitude: (float)level

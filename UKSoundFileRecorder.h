@@ -74,42 +74,41 @@
 	
 	BOOL						isRecording;
 	
-	id							delegate;
 	BOOL						delegateWantsTimeChanges;
 	BOOL						delegateWantsLevels;
 	BOOL						canDoMetering;
 	BOOL						delegateWantsRawFrames;
 }
 
-+(NSDictionary*)	defaultOutputFormat;
++(nonnull NSDictionary*)	defaultOutputFormat;
 
-+(NSArray*)			availableInputDevices;	// NSArray of NSDictionaries. See below for the keys.
-
-//-(id)				init;	// Designated initializer. You can use -init and then do setOutputFilePath: or use -initWithOutputFilePath:.
--(id)				initWithOutputFilePath: (NSString*)ofp;	
+/// Designated initializer. You can use -init and then do setOutputFilePath: or use -initWithOutputFilePath:.
+-(nonnull instancetype)				init NS_DESIGNATED_INITIALIZER;
+-(nonnull instancetype)				initWithOutputFilePath: (nonnull NSString*)ofp;
 
 // Setup:
--(void)				setOutputFilePath: (NSString*)ofp;			// If you set no path, the delegate *must* implement -soundFileRecorder:receivedFrames:count:seconds:.
--(NSString*)		outputFilePath;
--(IBAction)			takeOutputFilePathFrom: (id)sender;			// Calls [self setOutputFilePath: [sender stringValue]].
+/// If you set no path, the delegate *must* implement -soundFileRecorder:receivedFrames:count:seconds:
+@property (nonatomic, copy, nonnull) NSString *outputFilePath;
+/// Calls [self setOutputFilePath: [sender stringValue]].
+-(IBAction)			takeOutputFilePathFrom: (nonnull id)sender;
 
--(void)				setOutputFormat: (NSDictionary*)inASBD;		// Keys for this dictionary can be found in UKAudioStreamBasicDescription.h and below.
--(NSDictionary*)	outputFormat;
--(NSDictionary*)	actualOutputFormat;
+/// Keys for this dictionary can be found in UKAudioStreamBasicDescription.h and below.
+@property (nonatomic, copy, nonnull) NSDictionary *outputFormat;
+@property (nonatomic, copy, readonly, nonnull) NSDictionary*	actualOutputFormat;
 
--(void)								setDelegate: (id<UKSoundFileRecorderDelegate>)dele;
--(id<UKSoundFileRecorderDelegate>)	delegate;
+@property (nonatomic, weak, nullable) id<UKSoundFileRecorderDelegate> delegate;
 
 // Recording:
--(void)				start: (id)sender;
--(BOOL)				isRecording;
--(void)				stop: (id)sender;
+-(IBAction)				start: (nullable id)sender;
+@property (nonatomic, getter=isRecording, readonly) BOOL recording;
+-(IBAction)				stop: (nullable id)sender;
 
--(void)				setInputDeviceUID: (NSString*)inString;	// Pass NIL for the system default input device as set in System Preferences.app
--(NSString*)		inputDeviceUID;
+// Pass NIL for the system default input device as set in System Preferences.app
+@property (nonatomic, strong, null_resettable) NSString *inputDeviceUID;
 
 // You probably don't need this:
--(void)				prepare;		// Called as needed by start:, if nobody called it before that.
+/// Called as needed by start:, if nobody called it before that.
+-(void)				prepare;
 
 @end
 
@@ -135,40 +134,40 @@
 //	Dictionary keys in -availableInputDevices dictionaries:
 // -----------------------------------------------------------------------------
 
-extern NSString	*	UKSoundFileRecorderDeviceUID;
-extern NSString	*	UKSoundFileRecorderDeviceName;
-extern NSString	*	UKSoundFileRecorderDeviceManufacturer;
+extern NSString	*__nonnull	UKSoundFileRecorderDeviceUID;
+extern NSString	*__nonnull	UKSoundFileRecorderDeviceName;
+extern NSString	*__nonnull	UKSoundFileRecorderDeviceManufacturer;
 
 
 // -----------------------------------------------------------------------------
 //	Notifications:
 // -----------------------------------------------------------------------------
 
-extern NSString*	UKSoundFileRecorderAvailableInputDevicesChangedNotification;
+extern NSString*__nonnull	UKSoundFileRecorderAvailableInputDevicesChangedNotification;
 
 
 // -----------------------------------------------------------------------------
 //	Delegate protocol:
 // -----------------------------------------------------------------------------
 
-@protocol UKSoundFileRecorderDelegate
+@protocol UKSoundFileRecorderDelegate <NSObject>
 
 @optional
 
-// Sent on a successful start:
--(void)	soundFileRecorderWasStarted: (UKSoundFileRecorder*)sender;
+/// Sent on a successful start:
+-(void)	soundFileRecorderWasStarted: (nonnull UKSoundFileRecorder*)sender;
 
-// Sent while we're recording:
--(void)	soundFileRecorder: (UKSoundFileRecorder*)sender reachedDuration: (NSTimeInterval)timeInSeconds;
+/// Sent while we're recording:
+-(void)	soundFileRecorder: (nonnull UKSoundFileRecorder*)sender reachedDuration: (NSTimeInterval)timeInSeconds;
 
-// This is for level meters:
--(void)	soundFileRecorder: (UKSoundFileRecorder*)sender hasAmplitude: (float)theLevel;
+/// This is for level meters:
+-(void)	soundFileRecorder: (nonnull UKSoundFileRecorder*)sender hasAmplitude: (float)theLevel;
 
-// Sent after a successful stop:
--(void)	soundFileRecorderWasStopped: (UKSoundFileRecorder*)sender;
+/// Sent after a successful stop:
+-(void)	soundFileRecorderWasStopped: (nonnull UKSoundFileRecorder*)sender;
 
-// The following is required if you do not provide an outputFilePath:
--(void)	soundFileRecorder: (UKSoundFileRecorder*)sender receivedFrames: (AudioBufferList*)inData count: (UInt32)inNumberFrames seconds: (double)inSeconds;
+/// The following is required if you do not provide an outputFilePath:
+-(void)	soundFileRecorder: (nonnull UKSoundFileRecorder*)sender receivedFrames: (nonnull AudioBufferList*)inData count: (UInt32)inNumberFrames seconds: (double)inSeconds;
 
 @end
 
